@@ -1,0 +1,3 @@
+-r orquestador/requirements.txt
+-r tutor_clases/requirements.txt
+-r tutor_info/requirements.txt

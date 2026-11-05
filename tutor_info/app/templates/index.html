@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tutor DCCO · Tester</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --card: #0b1220;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --primary: #f39201;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #0b1220, #0f172a 30%, #0b1220);
+        color: var(--text);
+        font-family: Inter, system-ui, Segoe UI, Roboto, Ubuntu, sans-serif;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 30px auto;
+        padding: 0 16px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      header .logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--primary);
+        display: grid;
+        place-items: center;
+        color: #0b1220;
+        font-weight: 900;
+      }
+      h1 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        background: var(--panel);
+        padding: 12px;
+        border: 1px solid #1f2937;
+        border-radius: 16px;
+      }
+      .bar input[type="text"] {
+        flex: 1;
+        min-width: 260px;
+        background: #0d1324;
+        color: var(--text);
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+      .bar button {
+        appearance: none;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: var(--primary);
+        color: #0b1220;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .chat {
+        background: var(--panel);
+        border: 1px solid #1f2937;
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 14px;
+        max-height: 70vh;
+        overflow-y: auto;
+      }
+      .msg {
+        margin-bottom: 12px;
+      }
+      .msg.user .bubble {
+        background: #1e3a8a;
+        text-align: right;
+      }
+      .msg.bot .bubble {
+        background: #0d1324;
+      }
+      .bubble {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 12px;
+        line-height: 1.5;
+        max-width: 80%;
+        white-space: pre-wrap;
+      }
+      .composer {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .composer textarea {
+        flex: 1;
+        min-height: 60px;
+        resize: vertical;
+        background: #0d1324;
+        color: var(--text);
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .composer button {
+        appearance: none;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        background: var(--primary);
+        color: #0b1220;
+        font-weight: 800;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="logo">ES</div>
+        <div>
+          <h1>Tutor DCCO · Tester</h1>
+          <small>Interfaz simple para probar <code>/ask</code></small>
+        </div>
+      </header>
+
+      <div class="bar">
+        <!-- se rellena automáticamente con la origin actual -->
+        <input id="endpoint" type="text" />
+        <button id="btnPing">Probar conexión</button>
+        <button id="btnClear">Limpiar</button>
+      </div>
+
+      <div id="chat" class="chat"></div>
+
+      <div class="composer">
+        <textarea id="question" placeholder="Escribe tu pregunta..."></textarea>
+        <button id="btnSend">Enviar</button>
+      </div>
+    </div>
+
+    <script>
+      const chat = document.getElementById("chat");
+      const questionInput = document.getElementById("question");
+      const btnSend = document.getElementById("btnSend");
+      const btnClear = document.getElementById("btnClear");
+      const btnPing = document.getElementById("btnPing");
+      const endpoint = document.getElementById("endpoint");
+
+      // Endpoint relativo a la misma origin donde corre Flask
+      const ASK_URL = `${window.location.origin}/ask`;
+      endpoint.value = ASK_URL;
+
+      function addMessage(text, who = "bot") {
+        const msg = document.createElement("div");
+        msg.className = `msg ${who}`;
+        msg.innerHTML = `<div class="bubble">${text}</div>`;
+        chat.appendChild(msg);
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      btnSend.onclick = async () => {
+        const q = questionInput.value.trim();
+        if (!q) return;
+        addMessage(q, "user");
+        questionInput.value = "";
+        addMessage("...", "bot");
+
+        try {
+          const res = await fetch(ASK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: q }),
+          });
+          const data = await res.json();
+          chat.lastChild.remove();
+          if (data.answer) addMessage(data.answer, "bot");
+          else addMessage("Error: " + (data.error || "Sin respuesta"), "bot");
+        } catch (err) {
+          chat.lastChild.remove();
+          addMessage("⚠️ Error de conexión: " + err.message, "bot");
+        }
+      };
+
+      btnClear.onclick = () => (chat.innerHTML = "");
+      btnPing.onclick = async () => {
+        try {
+          const res = await fetch(ASK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: "ping" }),
+          });
+          await res.json();
+          addMessage("Servidor responde correctamente ✅", "bot");
+        } catch (e) {
+          addMessage("Servidor no disponible ❌", "bot");
+        }
+      };
+    </script>
+  </body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tutor SL – Prueba</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #111827;
+        --soft: #1f2937;
+        --txt: #e5e7eb;
+        --muted: #94a3b8;
+        --accent: #22d3ee;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #0b1022, #0a0f1e);
+        color: var(--txt);
+        font: 15px/1.45 system-ui, Segoe UI, Roboto, Arial;
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      .panel {
+        background: rgba(17, 24, 39, 0.6);
+        border: 1px solid #243244;
+        border-radius: 14px;
+        padding: 14px 14px 10px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 20px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      input,
+      textarea,
+      button {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid #2a3a4f;
+        background: #0e1623;
+        color: var(--txt);
+        padding: 10px;
+      }
+      input:focus,
+      textarea:focus {
+        outline: 2px solid #1f9dbe;
+        border-color: #1f9dbe;
+      }
+      button {
+        cursor: pointer;
+        background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+        border: none;
+        color: #002025;
+        font-weight: 700;
+      }
+      button.secondary {
+        background: #0e1623;
+        color: var(--txt);
+        border: 1px solid #2a3a4f;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+      }
+      .row > * {
+        flex: 1;
+      }
+      .chat {
+        margin-top: 16px;
+        background: rgba(10, 16, 27, 0.65);
+        border: 1px solid #203042;
+        border-radius: 16px;
+        padding: 12px;
+        height: 420px;
+        overflow: auto;
+      }
+      .msg {
+        display: flex;
+        margin: 8px 0;
+      }
+      .msg .b {
+        max-width: 75%;
+        padding: 10px 12px;
+        border-radius: 12px;
+      }
+      .me .b {
+        margin-left: auto;
+        background: #0e7490;
+        color: #e6fbff;
+      }
+      .bot .b {
+        margin-right: auto;
+        background: #152235;
+        border: 1px solid #23344a;
+      }
+      .meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .tiny {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #112233;
+        border: 1px solid #244;
+        color: #bfe;
+      }
+      .footer {
+        margin-top: 8px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .small {
+        font-size: 12px;
+      }
+      .ok {
+        color: #34d399;
+      }
+      .err {
+        color: #fca5a5;
+      }
+      .hint {
+        color: #cbd5e1;
+      }
+      .k {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        color: #a5b4fc;
+      }
+      .flex {
+        display: flex;
+        gap: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        <h1>🧪 Tutor SL – Front de prueba</h1>
+        <div class="grid">
+          <div>
+            <label>ID de sesión (avatar_id)</label>
+            <input id="sessionId" placeholder="p.ej. avatar_123" />
+          </div>
+          <div>
+            <label>Topic hint (opcional)</label>
+            <input id="topicHint" placeholder="p.ej. Derivadas básicas" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 10px">
+          <div>
+            <label>Mensaje</label>
+            <input
+              id="msg"
+              placeholder="Escribe tu mensaje y presiona Enter o clic en Enviar"
+            />
+          </div>
+          <div style="max-width: 160px; align-self: end">
+            <button id="send">Enviar</button>
+          </div>
+        </div>
+
+        <div class="footer">
+          <div class="flex">
+            <button class="secondary" id="resetBtn" title="POST /api/reset">
+              Reiniciar sesión
+            </button>
+            <button class="secondary" id="pingBtn" title="GET /api/health">
+              Health
+            </button>
+            <button class="secondary" id="llmBtn" title="GET /api/llm_test">
+              LLM test
+            </button>
+          </div>
+          <div class="small">
+            Fase: <span id="phase" class="badge">—</span>
+            <span class="tiny">
+              • Modelo: <span class="k" id="model">desconocido</span></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div id="chat" class="chat" aria-live="polite"></div>
+
+      <div class="tiny" style="margin-top: 6px">
+        Consejos: el backend devuelve <code>chunks[]</code>. Aquí se muestran
+        unidos. Usa el ID de sesión para mantener el contexto entre mensajes.
+      </div>
+    </div>
+
+    <script>
+      const el = (id) => document.getElementById(id);
+      const chat = el("chat");
+      const sessionIdInput = el("sessionId");
+      const topicHintInput = el("topicHint");
+      const msgInput = el("msg");
+      const phaseBadge = el("phase");
+      const modelSpan = el("model");
+
+      // Persistir id de sesión localmente
+      const LS_KEY = "sl_tutor_session_id";
+      sessionIdInput.value =
+        localStorage.getItem(LS_KEY) ||
+        "avatar_" + Math.random().toString(36).slice(2, 8);
+
+      function setPhase(p) {
+        phaseBadge.textContent = p || "—";
+      }
+      function setModel(m) {
+        modelSpan.textContent = m || "desconocido";
+      }
+
+      // Pintar mensajes
+      function addMsg(role, text) {
+        const wrap = document.createElement("div");
+        wrap.className = "msg " + (role === "user" ? "me" : "bot");
+        const b = document.createElement("div");
+        b.className = "b";
+        b.textContent = text;
+        wrap.appendChild(b);
+        chat.appendChild(wrap);
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      // Util: unir chunks (array de strings) en un párrafo
+      function joinChunks(chunks) {
+        if (!Array.isArray(chunks)) return "";
+        return chunks.join(" ");
+      }
+
+      async function sendMessage() {
+        const sessionId = (sessionIdInput.value || "").trim();
+        const message = (msgInput.value || "").trim();
+        const topic = (topicHintInput.value || "").trim();
+
+        if (!sessionId) {
+          alert("Falta ID de sesión (avatar_id)");
+          return;
+        }
+        if (!message) {
+          return;
+        }
+
+        // Guarda id de sesión
+        localStorage.setItem(LS_KEY, sessionId);
+
+        addMsg("user", message);
+        msgInput.value = "";
+
+        try {
+          const r = await fetch("/api/sl_chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json;charset=utf-8" },
+            body: JSON.stringify({ avatar_id: sessionId, message, topic }),
+          });
+
+          const j = await r.json();
+          if (!r.ok || !j.ok) {
+            const errTxt =
+              j && j.error ? j.error : r.status + " " + r.statusText;
+            addMsg("assistant", "⚠️ Error: " + errTxt);
+            return;
+          }
+
+          const reply = joinChunks(j.chunks || []);
+          addMsg("assistant", reply || "[(sin contenido)]");
+          setPhase(j.phase);
+          if (j.state && j.state.model) setModel(j.state.model);
+        } catch (e) {
+          addMsg(
+            "assistant",
+            "🚫 Error de red: " + (e && e.message ? e.message : e)
+          );
+        }
+      }
+
+      // Reset de sesión
+      async function resetSession() {
+        const sessionId = (sessionIdInput.value || "").trim() || "default";
+        try {
+          const r = await fetch("/api/reset", {
+            method: "POST",
+            headers: { "Content-Type": "application/json;charset=utf-8" },
+            body: JSON.stringify({ session_id: sessionId }),
+          });
+          const j = await r.json();
+          addMsg(
+            "assistant",
+            j.ok
+              ? "🔄 " + (j.message || "Sesión reiniciada")
+              : "⚠️ No se pudo reiniciar"
+          );
+          setPhase("intake");
+        } catch (e) {
+          addMsg("assistant", "🚫 Error al reiniciar: " + e.message);
+        }
+      }
+
+      // Health check
+      async function callHealth() {
+        try {
+          const r = await fetch("/api/health");
+          const j = await r.json();
+          addMsg("assistant", j.ok ? "✅ Health: up" : "⚠️ Health: down");
+        } catch (e) {
+          addMsg("assistant", "🚫 Health error: " + e.message);
+        }
+      }
+
+      // LLM test
+      async function callLLMTest() {
+        try {
+          const r = await fetch("/api/llm_test");
+          const j = await r.json();
+          addMsg(
+            "assistant",
+            j.ok
+              ? "🧪 LLM test → " + (j.reply || "ok")
+              : "⚠️ LLM error: " + (j.error || "")
+          );
+        } catch (e) {
+          addMsg("assistant", "🚫 LLM test error: " + e.message);
+        }
+      }
+
+      // Enter envía
+      msgInput.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+          ev.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Botones
+      document.getElementById("send").addEventListener("click", sendMessage);
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", resetSession);
+      document.getElementById("pingBtn").addEventListener("click", callHealth);
+      document.getElementById("llmBtn").addEventListener("click", callLLMTest);
+
+      // Init: mostrar modelo si tu backend lo expone en el state (opcional)
+      (function greet() {
+        addMsg(
+          "assistant",
+          "👋 Listo. Escribe un mensaje para iniciar el intake o usa “Topic hint” para orientar el tema."
+        );
+        setPhase("intake");
+      })();
+    </script>
+  </body>
+</html>

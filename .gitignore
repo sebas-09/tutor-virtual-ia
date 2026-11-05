@@ -1,0 +1,31 @@
+# Configuración privada
+.env
+.env.*
+!.env.example
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.example.json
+# Entornos, cachés y compilados
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.vs/
+.idea/
+.vscode/
+bin/
+obj/
+dist/
+build/
+*.rar
+*.zip
+*.log
+.local/
+# Índices, conversaciones y datos generados
+**/storage/*
+!**/storage/.gitkeep
+*.db
+*.sqlite*
+*.pkl
+*.faiss

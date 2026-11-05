@@ -1,0 +1,11 @@
+.git
+.venv
+**/.env
+**/.env.*
+!**/.env.example
+**/appsettings.json
+**/bin
+**/obj
+**/.vs
+**/__pycache__
+.local
